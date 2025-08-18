@@ -1,0 +1,36 @@
+{
+  "query": "SELECT * FROM irb_cc_2",
+  "type_": "classif",
+  "train_sz": "0.9",
+  "val_sz": "0.05",
+  "random_seed": "34",
+  "stratify_cols": [
+    "PROCESS_DATE",
+    "DEFAULT_FLAG_CIC"
+  ],
+  "file_paths": {
+    "full_data": "D:/work/working_files/bscore_retrain/data/batches",
+    "train_data": "D:/work/working_files/bscore_retrain/data/train_small.parquet",
+    "val_data": "D:/work/working_files/bscore_retrain/data/val_small.parquet",
+    "test_data": "D:/work/working_files/bscore_retrain/data/bscore_cc_test.parquet"
+  },
+  "target": "DEFAULT_FLAG_CIC",
+  "not_features": [
+    "PROCESS_DATE",
+    "DEFAULT_FLAG_CIC",
+    "DEFAULT_FLAG",
+    "CUSTOMER_ID",
+    "tag_khong_du_dk",
+    "pd",
+    "score",
+    "grade",
+    "TTC_PD"
+  ],
+  "num_features": "30",
+  "mlflow_uri": "http://10.2.120.54:5000",
+  "experiment_name": "bscore",
+  "conda_path": "C:/Users/ChinhNQ1/Anaconda3/envs/bscore_irb/python.exe",
+  "num_cv_fold": "3",
+  "cross_validation": "false",
+  "tuning": "false"
+}

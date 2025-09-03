@@ -41,7 +41,7 @@ class ProcessBinningModel(Transformer, HasInputCols, DefaultParamsReadable, Defa
     def _transform(self, df: DataFrame) -> DataFrame:
         pickled_bins = self.getOptbinPickled()
         input_cols = self.getInputCols() # Assuming you have a getter for inputCols
-        woe_cols = [f"{col}_WOE" for col in input_cols]
+        woe_cols =  [f"{col}_WOE" for col in input_cols]
         
         # 1. Define the output schema for the UDF.
         # It's a StructType that holds all the new WOE columns.
@@ -158,3 +158,6 @@ class ProcessBinningEstimator(Estimator, HasInputCols, HasLabelCol, DefaultParam
         pickled_optbin = base64.b64encode(pickle.dumps(optbsketch)).decode('ascii')
     
         return ProcessBinningModel(pickledBin=pickled_optbin, inputCols=inputCols)
+
+if __name__ == "__main__":
+    print("Hello")

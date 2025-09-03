@@ -1,7 +1,10 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 import numpy as np
-from utils.utils import split_features_by_type  # Assumes this function is already implemented
+from utils.utils import (
+    split_features_by_type,
+)  # Assumes this function is already implemented
+
 
 class TopCorrelationSelector(BaseEstimator, TransformerMixin):
     """
@@ -13,6 +16,7 @@ class TopCorrelationSelector(BaseEstimator, TransformerMixin):
     top_percent : float
         Percentage of top numerical features to keep (e.g. 0.3 means top 30%).
     """
+
     def __init__(self, top_percent=0.3):
         self.top_percent = top_percent
         self.selected_numerical_features_ = []
@@ -23,15 +27,21 @@ class TopCorrelationSelector(BaseEstimator, TransformerMixin):
         y = pd.Series(y).copy()
 
         # Split features by type
-        numerical_features, categorical_features = split_features_by_type(X, X.columns.tolist())
+        numerical_features, categorical_features = split_features_by_type(
+            X, X.columns.tolist()
+        )
 
         # Compute absolute Pearson correlation on numerical features
-        corrs = X[numerical_features].apply(lambda col: np.abs(np.corrcoef(col, y)[0, 1]))
+        corrs = X[numerical_features].apply(
+            lambda col: np.abs(np.corrcoef(col, y)[0, 1])
+        )
         corrs = corrs.dropna()
 
         # Select top X% numerical features
         n_top = max(1, int(len(corrs) * self.top_percent))
-        self.selected_numerical_features_ = corrs.sort_values(ascending=False).head(n_top).index.tolist()
+        self.selected_numerical_features_ = (
+            corrs.sort_values(ascending=False).head(n_top).index.tolist()
+        )
 
         # Save categorical features to add later during transform
         self.categorical_features_ = categorical_features

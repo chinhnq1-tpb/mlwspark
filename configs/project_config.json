@@ -1,0 +1,29 @@
+{
+  "query": "SELECT * FROM irb_cc_2",
+  "type_": "classif",
+  "train_sz": "0.9",
+  "val_sz": "0.05",
+  "random_seed": "34",
+  "stratify_cols": [
+    "PROCESS_DATE",
+    "DEFAULT_FLAG_CIC"
+  ],
+  "file_paths": {
+    "report": "reports/test.md",
+    "full_data": "data/batches",
+    "train_data": "data/flights-flag.parquet",
+    "val_data": "D:/work/working_files/bscore_retrain/data/val_small.parquet",
+    "test_data": "data/flights-flag.parquet"
+  },
+  "target": "DEP_DELAY_FLAG",
+  "not_features": [
+	"FL_DATE"
+  ],
+  "num_features": "3",
+  "mlflow_uri": "http://localhost:5000",
+  "experiment_name": "test",
+  "conda_path": "/home/chinh/miniconda3/envs/bscore_irb/bin/python",
+  "num_cv_fold": "3",
+  "cross_validation": "false",
+  "tuning": "false"
+}

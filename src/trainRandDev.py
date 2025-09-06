@@ -1,4 +1,5 @@
 from pyspark.sql import SparkSession
+from time import time
 from pyspark.ml import Pipeline
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.feature import StringIndexer
@@ -42,27 +43,30 @@ def train(data, proj_conf):
             unused_cols.append(proj_conf["target"])
         for element in unused_cols:
             features_list.remove(element)
+        print(features_list)
 
         ## Step 2: Process Data
         ### Step 2.1: Encode Target
-        indexer = StringIndexer(inputCol=proj_conf["target"], outputCol="label")
+        # indexer = StringIndexer(inputCol=proj_conf["target"], outputCol="label")
 
         ### Step 2.2: Binning Data
         woe = ProcessBinningEstimator(
-            inputCols=features_list, labelCol=indexer.getOutputCol()
+            inputCols=features_list, labelCol=proj_conf["target"]
         )
 
         ## Step 3: Feature Select
         num_features = int(proj_conf["num_features"])
         mrmr = MRMRSelector(
             inputCols=woe.getWOECols(),
-            labelCol=indexer.getOutputCol(),
+            labelCol=proj_conf["target"],
             numFeatures=num_features,
         )
 
         ## Step 4: Training
-        lr = LogisticRegression()
-        evaluator = GiniEvaluator(rawPredictionCol="prediction", labelCol="label")
+        lr = LogisticRegression(labelCol=proj_conf["target"])
+        evaluator = GiniEvaluator(
+            rawPredictionCol="prediction", labelCol=proj_conf["target"]
+        )
         if proj_conf["tuning"] == "true":
             paramGrid = (
                 ParamGridBuilder()
@@ -80,7 +84,7 @@ def train(data, proj_conf):
 
         ## Step 5: Pipeline Assembling
         ### Assemble the preprocessing stages first
-        pipeline = Pipeline(stages=[indexer, woe, mrmr, lr])
+        pipeline = Pipeline(stages=[woe, mrmr, lr])
 
         # Initialize model variables to be populated by the conditional blocks
         best_model = None
@@ -137,42 +141,46 @@ def train(data, proj_conf):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Process CSV and Parquet files with PySpark."
-    )
-    parser.add_argument(
-        "--config-path",
-        type=str,
-        required=True,
-        help="Path to the project configuration file.",
-    )
-    args = parser.parse_args()
-    with open(args.config_path, "r") as file:
-        proj_conf = json.load(file)
+    try:
+        parser = argparse.ArgumentParser(
+            description="Process CSV and Parquet files with PySpark."
+        )
+        parser.add_argument(
+            "--config-path",
+            type=str,
+            required=True,
+            help="Path to the project configuration file.",
+        )
+        args = parser.parse_args()
+        with open(args.config_path, "r") as file:
+            proj_conf = json.load(file)
 
-    conda_python_path = proj_conf["conda_path"]
-    os.environ["PYSPARK_PYTHON"] = conda_python_path
-    os.environ["PYSPARK_DRIVER_PYTHON"] = conda_python_path
+        conda_python_path = proj_conf["conda_path"]
+        os.environ["PYSPARK_PYTHON"] = conda_python_path
+        os.environ["PYSPARK_DRIVER_PYTHON"] = conda_python_path
 
-    # Initialize a Spark session
-    spark = (
-        SparkSession.builder.appName("MLflow Spark Example")
-        .config("spark.executor.memory", "8g")
-        .config("spark.driver.memory", "8g")
-        .config("spark.local.dir", "D:/tmp/spark")
-        .getOrCreate()
-    )
-    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+        # Initialize a Spark session
+        spark = (
+            SparkSession.builder.appName("Training")
+            .config("spark.executor.memory", "4g")
+            .config("spark.driver.memory", "4g")
+            .config("spark.ui.port", "4040")  # custom port
+            .config("spark.ui.enabled", "true")
+            .getOrCreate()
+        )
+        spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
 
-    mlflow.set_tracking_uri(proj_conf["mlflow_uri"])
-    mlflow_experiment = mlflow.set_experiment(proj_conf["experiment_name"])
+        mlflow.set_tracking_uri(proj_conf["mlflow_uri"])
+        mlflow_experiment = mlflow.set_experiment(proj_conf["experiment_name"])
 
-    # Load Training Data
-    train_df = spark.read.parquet(proj_conf["file_paths"]["train_data"])
-    n_partitions = 200
-    train_df = train_df.repartition(n_partitions)
+        # Load Training Data
+        train_df = spark.read.parquet(proj_conf["file_paths"]["train_data"])
+        n_partitions = 20
+        train_df = train_df.repartition(n_partitions)
 
-    # Train the model
-    train(train_df, proj_conf)
+        # Train the model
+        train(train_df, proj_conf)
 
-  sudo add-apt-repository --remove ppa:ubuntu-vn/ppa  spark.stop()
+    except Exception as e:
+        print("Job failed, but SparkContext still alive for debugging:", e)
+        input("Press Enter to exit...")  # keeps UI alive until you press Enter

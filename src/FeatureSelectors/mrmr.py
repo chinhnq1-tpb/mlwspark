@@ -3,7 +3,7 @@ This module provides the MRMRSelector class, a feature selection algorithm based
 Maximum Relevance - Minimum Redundancy (mRMR) principle.
 """
 
-from relevanceFunc import oneWayANOVA
+from .relevanceFunc import oneWayANOVA
 from pyspark.ml import Estimator
 from pyspark.sql import dataframe as DataFrame
 from pyspark import keyword_only

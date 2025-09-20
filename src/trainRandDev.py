@@ -15,7 +15,7 @@ from pyspark.ml.tuning import CrossValidator, ParamGridBuilder, TrainValidationS
 from mlflow.data.spark_dataset import SparkDataset
 
 
-def filter_low_cor_numerical(data, numerical_feat):
+def filter_low_cor_numerical(data, numerical_feat, proj_conf):
     # Step 1: Compute absolute correlations
     correlations = {
         col: abs(data.stat.corr(col, proj_conf["target"])) for col in numerical_feat
@@ -138,49 +138,3 @@ def train(data, proj_conf):
         best_lr = best_model.stages[-1]
         mlflow.log_param("best_regParam", best_lr.getRegParam())
         mlflow.log_param("best_elasticNetParam", best_lr.getElasticNetParam())
-
-
-if __name__ == "__main__":
-    try:
-        parser = argparse.ArgumentParser(
-            description="Process CSV and Parquet files with PySpark."
-        )
-        parser.add_argument(
-            "--config-path",
-            type=str,
-            required=True,
-            help="Path to the project configuration file.",
-        )
-        args = parser.parse_args()
-        with open(args.config_path, "r") as file:
-            proj_conf = json.load(file)
-
-        conda_python_path = proj_conf["conda_path"]
-        os.environ["PYSPARK_PYTHON"] = conda_python_path
-        os.environ["PYSPARK_DRIVER_PYTHON"] = conda_python_path
-
-        # Initialize a Spark session
-        spark = (
-            SparkSession.builder.appName("Training")
-            .config("spark.executor.memory", "4g")
-            .config("spark.driver.memory", "4g")
-            .config("spark.ui.port", "4040")  # custom port
-            .config("spark.ui.enabled", "true")
-            .getOrCreate()
-        )
-        spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-
-        mlflow.set_tracking_uri(proj_conf["mlflow_uri"])
-        mlflow_experiment = mlflow.set_experiment(proj_conf["experiment_name"])
-
-        # Load Training Data
-        train_df = spark.read.parquet(proj_conf["file_paths"]["train_data"])
-        n_partitions = 20
-        train_df = train_df.repartition(n_partitions)
-
-        # Train the model
-        train(train_df, proj_conf)
-
-    except Exception as e:
-        print("Job failed, but SparkContext still alive for debugging:", e)
-        input("Press Enter to exit...")  # keeps UI alive until you press Enter

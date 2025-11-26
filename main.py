@@ -3,7 +3,6 @@ import json
 import os
 import mlflow
 from pyspark.sql import SparkSession
-
 from src.getAndPreprocess import read_data_from_mssql, preprocess, stratified_split
 from src.trainRandDev import train
 from src.eval import evaluate_model
